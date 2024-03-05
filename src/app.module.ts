@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DataService } from './data/data.service';
+import { DriversController } from './drivers/drivers.controller';
+import { DriversService } from './drivers/drivers.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -12,7 +14,7 @@ import { join } from 'path';
       exclude: ['/api/(.*)'],
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService, DataService],
+  controllers: [AppController, DriversController],
+  providers: [AppService, DataService, DriversService],
 })
 export class AppModule {}
