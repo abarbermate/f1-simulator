@@ -63,4 +63,8 @@ export class DataService implements OnApplicationBootstrap {
   getData(): DriverResponse {
     return this.data;
   }
+
+  patchData(index: number, data: Record<string, number | string>): void {
+    this.data[index] = { ...this.data[index], ...data };
+  }
 }
