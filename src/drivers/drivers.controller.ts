@@ -17,7 +17,7 @@ export class DriversController {
       driverPlace,
       prevDriverIndex,
       prevDriverPlace,
-    }: OverTakeResponse = this.driverService.overtake(driverId);
+    }: OverTakeResponse = this.driverService.prepareOvertake(driverId);
 
     this.driverService.patchDrivers(driverIndex, { place: prevDriverPlace });
     this.driverService.patchDrivers(prevDriverIndex, { place: driverPlace });

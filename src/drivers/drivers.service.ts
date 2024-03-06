@@ -26,7 +26,7 @@ export class DriversService {
     this.drivers[index] = { ...this.drivers[index], ...data };
   }
 
-  overtake(driverId: string): OverTakeResponse {
+  prepareOvertake(driverId: string): OverTakeResponse {
     const driverIndex: number = this.drivers.findIndex(
       (driver: Driver): boolean => driver.id === parseInt(driverId),
     );
