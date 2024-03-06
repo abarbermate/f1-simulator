@@ -9,7 +9,7 @@ import { DataService } from '../data/data.service';
 @Injectable()
 export class DriversService {
   constructor(private dataService: DataService) {}
-  overtake(driverId: string) {
+  overtake(driverId: string): void {
     const drivers = this.dataService.getData();
     const driverIndex = drivers.findIndex(
       (driver) => driver.id === parseInt(driverId),
