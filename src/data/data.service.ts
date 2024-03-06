@@ -19,9 +19,9 @@ import { DriversService } from '../drivers/drivers.service';
 export class DataService implements OnApplicationBootstrap {
   constructor(private driverService: DriversService) {}
   async onApplicationBootstrap(): Promise<void> {
-    const data: DriversInput = await this.loadFile();
-
     try {
+      const data: DriversInput = await this.loadFile();
+
       const strippedData: DriversInput = await DriversInputSchema.validate(
         data,
         {
@@ -29,15 +29,20 @@ export class DataService implements OnApplicationBootstrap {
         },
       );
 
-      const transformedData: DriversResponse =
-        await this.transformData(strippedData);
+      const shuffledPlaces: number[] = this.generatePlace(data.length);
+
+      const transformedData: DriversResponse = await this.transformData(
+        strippedData,
+        shuffledPlaces,
+      );
 
       this.driverService.setDrivers(transformedData);
     } catch (error) {
       if (error instanceof ValidationError) {
         console.error(error.errors);
-        process.exit(1);
       }
+      console.error(error);
+      process.exit(0);
     }
   }
 
@@ -48,8 +53,10 @@ export class DataService implements OnApplicationBootstrap {
     return JSON.parse(fileContents);
   }
 
-  private async transformData(data: DriversInput): Promise<DriversResponse> {
-    const shuffledPlaces: number[] = this.generatePlace(data.length);
+  private async transformData(
+    data: DriversInput,
+    shuffledPlaces: number[],
+  ): Promise<DriversResponse> {
     const mappedData: DriversResponse = data.map(
       (driver: DriverInput, index: number): Driver => {
         const imgCode: string = driver.code.toLowerCase();
