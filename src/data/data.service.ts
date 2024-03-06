@@ -6,31 +6,33 @@ import { ValidationError } from 'yup';
 import { promises as fsPromises } from 'fs';
 
 import {
+  Driver,
   DriverInput,
-  DriverInputSchema,
-  DriverOutputSchema,
-  DriverResponse,
+  DriversInput,
+  DriversInputSchema,
+  DriversOutputSchema,
+  DriversResponse,
 } from '../schemas';
+import { DriversService } from '../drivers/drivers.service';
 
 @Injectable()
 export class DataService implements OnApplicationBootstrap {
-  private data: DriverResponse;
+  constructor(private driverService: DriversService) {}
   async onApplicationBootstrap(): Promise<void> {
-    await this.load();
-  }
-
-  private async load(): Promise<void> {
-    const filePath = join(__dirname, '../../db/drivers.json');
-    const fileContents = await fsPromises.readFile(filePath, 'utf8');
-
-    const data = JSON.parse(fileContents);
+    const data: DriversInput = await this.loadFile();
 
     try {
-      const strippedData: DriverInput = await DriverInputSchema.validate(data, {
-        stripUnknown: true,
-      });
+      const strippedData: DriversInput = await DriversInputSchema.validate(
+        data,
+        {
+          stripUnknown: true,
+        },
+      );
 
-      this.data = await this.transformData(strippedData);
+      const transformedData: DriversResponse =
+        await this.transformData(strippedData);
+
+      this.driverService.setDrivers(transformedData);
     } catch (error) {
       if (error instanceof ValidationError) {
         console.error(error.errors);
@@ -39,32 +41,33 @@ export class DataService implements OnApplicationBootstrap {
     }
   }
 
-  private async transformData(data: DriverInput): Promise<DriverResponse> {
-    const shuffledPlaces = this.generatePlace(data.length);
-    const mappedData = data.map((driver, index) => {
-      const imgCode = driver.code.toLowerCase();
-      return {
-        ...driver,
-        imgUrl: `/static/${imgCode}.png`,
-        place: shuffledPlaces[index],
-      };
-    });
+  private async loadFile(): Promise<DriversInput> {
+    const filePath: string = join(__dirname, '../../db/drivers.json');
+    const fileContents: string = await fsPromises.readFile(filePath, 'utf8');
 
-    return DriverOutputSchema.validate(mappedData, {
+    return JSON.parse(fileContents);
+  }
+
+  private async transformData(data: DriversInput): Promise<DriversResponse> {
+    const shuffledPlaces: number[] = this.generatePlace(data.length);
+    const mappedData: DriversResponse = data.map(
+      (driver: DriverInput, index: number): Driver => {
+        const imgCode: string = driver.code.toLowerCase();
+        return {
+          ...driver,
+          imgUrl: `/static/${imgCode}.png`,
+          place: shuffledPlaces[index],
+        };
+      },
+    );
+
+    return DriversOutputSchema.validate(mappedData, {
       stripUnknown: true,
     });
   }
 
   private generatePlace(length: number): number[] {
-    const places = Array.from({ length }, (_, index) => index + 1);
+    const places: number[] = Array.from({ length }, (_, index) => index + 1);
     return _.shuffle(places);
-  }
-
-  getData(): DriverResponse {
-    return this.data;
-  }
-
-  patchData(index: number, data: Record<string, number | string>): void {
-    this.data[index] = { ...this.data[index], ...data };
   }
 }

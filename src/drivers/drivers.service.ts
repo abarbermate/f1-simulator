@@ -4,29 +4,45 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { DataService } from '../data/data.service';
+import { Driver, DriversResponse, OverTakeResponse } from '../schemas';
+import * as _ from 'lodash';
 
 @Injectable()
 export class DriversService {
-  constructor(private dataService: DataService) {}
-  overtake(driverId: string): void {
-    const drivers = this.dataService.getData();
-    const driverIndex = drivers.findIndex(
-      (driver) => driver.id === parseInt(driverId),
+  private drivers: DriversResponse;
+
+  setDrivers(drivers: DriversResponse): void {
+    this.drivers = drivers;
+  }
+
+  getDrivers(sorted: boolean = false): DriversResponse {
+    if (sorted) {
+      return _.sortBy(this.drivers, 'place');
+    }
+    return this.drivers;
+  }
+
+  patchDrivers(index: number, data: Record<string, number | string>): void {
+    this.drivers[index] = { ...this.drivers[index], ...data };
+  }
+
+  overtake(driverId: string): OverTakeResponse {
+    const driverIndex: number = this.drivers.findIndex(
+      (driver: Driver): boolean => driver.id === parseInt(driverId),
     );
 
     if (driverIndex === -1) {
       throw new NotFoundException(`Driver #${driverId} not found.`);
     }
 
-    const driverPlace = drivers[driverIndex].place;
+    const driverPlace: number = this.drivers[driverIndex].place;
 
     if (!driverPlace || driverPlace === 1) {
       throw new BadRequestException(`Driver #${driverId} can't overtake.`);
     }
 
-    const prevDriverIndex = drivers.findIndex(
-      (driver) => driver.place === driverPlace - 1,
+    const prevDriverIndex: number = this.drivers.findIndex(
+      (driver: Driver): boolean => driver.place === driverPlace - 1,
     );
 
     if (prevDriverIndex === -1) {
@@ -34,9 +50,13 @@ export class DriversService {
       throw new InternalServerErrorException();
     }
 
-    const prevDriverPlace = drivers[prevDriverIndex].place;
+    const prevDriverPlace: number = this.drivers[prevDriverIndex].place;
 
-    this.dataService.patchData(driverIndex, { place: prevDriverPlace });
-    this.dataService.patchData(prevDriverIndex, { place: driverPlace });
+    return {
+      driverIndex,
+      driverPlace,
+      prevDriverIndex,
+      prevDriverPlace,
+    };
   }
 }
